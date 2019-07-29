@@ -1,0 +1,910 @@
+<template>
+  <div id="app">
+    <van-popup v-model="warmprompt" class="defalut">
+      <div>
+        <p>OTC法币交易服务由第三方平台BitMall 提供，请认真核对交易信息后操作。</p>
+      </div>
+      <p @click="gotIt">我知道了</p>
+    </van-popup>
+    <van-tabs
+      v-model="active"
+      @click="onClick"
+      title-inactive-color="#FFFFFF"
+      :title-active-color="activecolor"
+      :color="linescolor">
+      <van-tab title="买入">
+        <van-popup v-model="showBListBuy" :class="blist" :style="{ height: '100%',width:'100%' }">
+          <ul>
+            <li
+              v-for="item in currencyList"
+              :key="item.bId"
+              :data-id="item.bId"
+              @click="checkCurrency(item.bId)"
+            >
+              <img :src="item.image" alt />
+              <span>{{item.bName}}</span>
+            </li>
+          </ul>
+        </van-popup>
+        <form action>
+          <div class="headinfo">
+            <div @click="showBListBuy=!showBListBuy">
+              <img :src="currentCurrency.bIamge" alt class="bizhong" />
+              <span class="bname">{{currentCurrency.bName}}</span>
+              <img src="./assets/img/quotation_nav_drop-down@3x.png" alt class="dorpdown" />
+            </div>
+            <div class="tuihuan">
+              1 USDT = ￥
+              <span>{{bitmall.buyPrice}}</span>
+            </div>
+          </div>
+
+          <div>
+            <p>
+              <span class="buyNum">买入数量</span>
+              <span class="const">可用:{{currentCurrency.totalAmount}}</span>
+            </p>
+            <input
+              type="number"
+              @input="cumputedprice(buyNum)"
+              max="100"
+              placeholder="请输入买入数量"
+              v-model="buyNum"
+            />
+            <i>{{currentCurrency.bName}}</i>
+          </div>
+          <div>
+            <p>
+              <span class="buyNum">支付金额</span>
+            </p>
+            <input
+              type="number"
+              @input="cumputedNum(buyAllPay)"
+              placeholder="请输入支付金额"
+              v-model="buyAllPay"
+            />
+            <i>CNY</i>
+          </div>
+
+          <div class="subdiv">
+            <div class="tobuy" @click="comformPay(1)">立即买入</div>
+          </div>
+          <div>
+            <p>温馨提示</p>
+            <p>单笔最低交易限额：{{bitmall.min}} CNY</p>
+            <p>单笔最高交易限额：{{bitmall.max}} CNY</p>
+            <p>客服微信号:four-usdt01</p>
+          </div>
+        </form>
+
+        <!-- <van-field v-model="value" placeholder="请输入用户名"/> -->
+      </van-tab>
+      <van-tab title="卖出">
+        <van-popup v-model="showBListSell" :class="blist">
+          <ul>
+            <li
+              v-for="item in currencyList"
+              :key="item.bId"
+              :data-id="item.bId"
+              @click="checkCurrency(item.bId)"
+            >
+              <img :src="item.image" alt />
+              <span>{{item.bName}}</span>
+            </li>
+          </ul>
+        </van-popup>
+        <form action>
+          <div class="headinfo">
+            <div @click="showBListSell=!showBListSell">
+              <img :src="currentCurrencySelling.bIamge" alt class="bizhong" />
+              <span class="bname">{{currentCurrencySelling.bName}}</span>
+              <img src="./assets/img/quotation_nav_drop-down@3x.png" alt class="dorpdown" />
+            </div>
+            <div class="tuihuan selltuihuan">
+              1 USDT = ￥
+              <span>{{bitmall.sellPrice}}</span>
+            </div>
+          </div>
+
+          <div>
+            <p>
+              <span class="buyNum">卖出数量</span>
+              <span class="const">可用:{{currentCurrencySelling.totalAmount}}</span>
+            </p>
+            <input
+              type="number"
+              placeholder="请输入卖出数量"
+              @input="cumputedprice1(sellNum)"
+              v-model="sellNum"
+            />
+            <i>{{currentCurrencySelling.bName}}</i>
+          </div>
+          <div>
+            <p>
+              <span class="buyNum">可得金额</span>
+            </p>
+            <input
+              type="number"
+              placeholder="请输入可得金额"
+              @input="cumputedNum1(sellAllPay)"
+              v-model="sellAllPay"
+            />
+            <i>CNY</i>
+          </div>
+          <div class="subdiv">
+            <div class="tosell" @click="show1=!show1">立即卖出</div>
+          </div>
+          <div>
+            <p>温馨提示</p>
+            <p>单笔最低交易限额：{{bitmall.min}} CNY</p>
+            <p>单笔最高交易限额：{{bitmall.max}} CNY</p>
+            <p>客服微信号:four-usdt01</p>
+          </div>
+        </form>
+      </van-tab>
+    </van-tabs>
+    <van-popup v-model="show1" position="bottom" :style="{ height: '4rem' }">
+      <div class="pwdpay" id="child">
+        <div class="payHeadTxt">
+          请输入支付密码
+          <img src="./assets/img/commodity_x@3x.png" alt @click="show1=false" />
+        </div>
+        <!-- @focus="showKeyboard = true" -->
+        <van-password-input :value="value" info v-show="showPassWord" />
+        <!-- <p class="forgetPwd">忘记密码?</p> -->
+        <!-- 数字键盘 -->
+        <van-number-keyboard
+          :show="showKeyboard"
+          @input="onInput"
+          @delete="onDelete"
+          @blur="showKeyboard = true"
+        />
+      </div>
+    </van-popup>
+    <!-- <div class="mask" @click="hidePanel">
+     
+    </div>-->
+    <a id="href_true" ref="linkToPay" target="_blank" style="display: none;"></a>
+    <van-popup v-model="paysuccuss" class="paysuccuss">下单成功</van-popup>
+    <footer>
+      <p>
+        <img src="./assets/img/bitmall_logo@3x.png" alt />
+        <span>BitMall</span>
+      </p>
+      <p>OTC法币交易服务由BitMall平台提供</p>
+    </footer>
+  </div>
+</template>
+
+<script>
+import Vue from "vue";
+import { Tab, Tabs } from "vant";
+import { Popup } from "vant";
+import md5 from "js-md5";
+import { PasswordInput, NumberKeyboard } from "vant";
+import { Notify } from "vant";
+import { Dialog } from "vant";
+Vue.use(Tab).use(Tabs);
+Vue.use(Popup);
+Vue.use(PasswordInput).use(NumberKeyboard);
+// 全局注册
+Vue.use(Dialog);
+Vue.use(Notify);
+Vue.config.productionTip = false;
+// import $ from "jquery";
+import qs from "qs";
+export default {
+  data() {
+    return {
+      paysuccuss: false,
+      sdsd: "defalut", //默认颜色
+      active: 0,
+      activecolor: "#F14348",
+      // value: "",
+      showKeyboard: true, //键盘显示
+      showPassWord: true, //密码框显示
+      showBListSell: false,
+      warmprompt: true, //提示
+      linescolor: '#F14348"', //tab下划线颜色
+      currencyList: "",
+      currencyList2: "",
+      showBListBuy: false,
+      show1: false,
+      blist: "blist",
+      value: "", //输入的6位密码
+      buyNum: 1, //买入数量
+      buyAllPay: "", //买入总价
+      sellNum: 1, //卖出数量
+      sellAllPay: "", //卖出总价
+      timer: "", //定时器
+      type: "", //安卓还是ios
+      currentCurrency: {
+        bid: 0,
+        totalAmount: 0,
+        bName: "",
+        bIamge:
+          ""
+      },
+      currentCurrencySelling: {
+        bid: 0,
+        totalAmount: 0,
+        bName: "",
+        bIamge:
+          ""
+      },
+      bitmall: {
+        min: "",
+        max: "",
+        buyPrice: "",
+        sellPrice: ""
+      }
+    };
+  },
+
+  created() {
+    let warmprompt = localStorage.getItem('warmprompt')
+    if(warmprompt) this.warmprompt = false
+
+    this.buyNum = this.buyNum.toFixed(9).slice(0, -1);
+    this.sellNum = this.sellNum.toFixed(9).slice(0, -1);
+    this.delfalut();
+  },
+
+  mounted() {
+    //定时器10s刷新
+    if (this.timer) {
+      clearInterval(this.timer);
+    } else {
+      this.timer = setInterval(() => {
+        this.getbitmallPrice(this.currentCurrency.bName);
+      }, 10000);
+    }
+    this.phone();
+  },
+  destroyed() {
+    clearInterval(this.timer);
+  },
+  methods: {
+    gotIt() {
+      this.warmprompt = false
+      localStorage.setItem('warmprompt', true)
+    },
+    //判断当前是ios还是Android
+    phone() {
+      var u = navigator.userAgent;
+      var isAndroid = u.indexOf("Android") > -1 || u.indexOf("Adr") > -1; //android终端
+      var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+      if (isAndroid) {
+        this.type = "isAndroid";
+      } else if (isiOS) {
+        this.type = "isiOS";
+      }
+    },
+    //模拟a标签点击进行跳转
+    data_href(url) {
+      this.$refs.linkToPay.setAttribute("href", url);
+      this.$refs.linkToPay.click();
+    },
+    //界面加载默认调用事件
+    delfalut() {
+      this.getAlllistPlatformCurrency()
+        .then(res => {
+          this.getbitmallPrice1(res.bName);
+        })
+        .then( () => {
+          this.getUserCurrencyDetails1(3);
+        });
+    },
+
+    requestDataForTenS() {
+      this.getbitmallPrice(this.currentCurrency.bName);
+    },
+
+    // 计算买入金额
+    cumputedprice(v1) {
+      this.buyAllPay = v1 * this.bitmall.buyPrice;
+      // var max = parseFloat(this.bitmall.max);
+      // var min = parseFloat(this.bitmall.min);
+      this.buyAllPay = this.buyAllPay.toFixed(3).slice(0, -1);
+    },
+    // 输入金额计算买入数量
+    cumputedNum(v2) {
+      if (v2) {
+        v2 = this.xiaoshu(v2);
+        this.buyAllPay = v2;
+      }
+
+      // var max = parseFloat(this.bitmall.max);
+      // var min = parseFloat(this.bitmall.min);
+
+      this.buyNum = (this.xiaoshu(v2) / this.bitmall.buyPrice)
+        .toFixed(9)
+        .slice(0, -1);
+    },
+    // 输入卖出数量 计算可得金额
+    cumputedprice1(v1) {
+      // 输入卖出数量大于可用数量时取可用数量
+
+      v1 = parseFloat(v1);
+
+      var v2 = parseFloat(this.currentCurrencySelling.totalAmount);
+      if (!v1) {
+        this.sellAllPay = "";
+        return;
+      }
+      if (v1 > v2) {
+        v1 = v2;
+        this.sellNum = v1.toFixed(9).slice(0, -1);
+      }
+
+      this.sellAllPay = v1 * this.bitmall.sellPrice;
+
+      if (this.sellAllPay > this.bitmall.max) {
+        this.sellAllPay = this.bitmall.max.toFixed(3).slice(0, -1);
+        this.sellNum = (this.sellAllPay / this.bitmall.sellPrice)
+          .toFixed(9)
+          .slice(0, -1);
+      } else {
+        this.sellAllPay = this.sellAllPay.toFixed(3).slice(0, -1);
+      }
+    },
+    // 输入可得金额大于可用数量所得金额 取最大可得金额
+    cumputedNum1(v3) {
+      var v1 = parseFloat(this.sellAllPay / this.bitmall.sellPrice);
+
+      var v2 = parseFloat(this.currentCurrencySelling.totalAmount);
+      if (!v3) {
+        this.sellNum = "";
+        return;
+      }
+      if (v3) {
+        // console.log(v3);
+        v3 = this.xiaoshu(v3);
+        this.sellAllPay = v3;
+      }
+
+      if (v1 > v2) {
+        this.sellNum = v2.toFixed(9).slice(0, -1);
+        this.sellAllPay = (v2 * this.bitmall.sellPrice).toFixed(3).slice(0, -1);
+      } else {
+        this.sellNum = v1.toFixed(9).slice(0, -1);
+      }
+    },
+    //tab 切换
+    onClick() {
+      if (this.active === 0) {
+        this.activecolor = "#F14348";
+        this.linescolor = "#F14348";
+      } else {
+        this.activecolor = "#4FCC7A";
+        this.linescolor = "#4FCC7A";
+      }
+    },
+    //键盘输入
+    onInput(key) {
+      this.value = (this.value + key).slice(0, 6);
+      if (this.value.length == 6) {
+        this.show1 = false;
+        var md5pwd = md5("Bochat2019" + this.value + "001");
+
+        this.bitmallPay(2, md5pwd);
+
+        this.value = "";
+      }
+    },
+    // 键盘删除
+    onDelete() {
+      this.value = this.value.slice(0, this.value.length - 1);
+    },
+
+    getbitmallPrice1(currency) {
+      this.$http
+        .post("/app/meet/bitmallPrice", qs.stringify({ currency: currency }))
+        .then(res => {
+          this.bitmall = res.data.data;
+          this.buyAllPay = (this.buyNum * this.bitmall.buyPrice)
+            .toFixed(3)
+            .slice(0, -1);
+          this.sellAllPay = (this.sellNum * this.bitmall.sellPrice)
+            .toFixed(3)
+            .slice(0, -1);
+        });
+    },
+    //比特币价格(最大 最小 汇率)
+    async getbitmallPrice(currency) {
+      let res = await this.$http.post(
+        "/app/meet/bitmallPrice",
+        qs.stringify({ currency: currency })
+      );
+      this.bitmall = res.data.data;
+      this.buyAllPay = (this.buyNum * this.bitmall.buyPrice)
+        .toFixed(3)
+        .slice(0, -1);
+      this.sellAllPay = (this.sellNum * this.bitmall.sellPrice)
+        .toFixed(3)
+        .slice(0, -1);
+    },
+    //所有币种
+    async getAlllistPlatformCurrency() {
+      let res = await this.$http.post("/app/trading/listPlatformCurrency");
+
+      this.currencyList = res.data.data;
+      //filter 过滤
+      this.currencyList = this.currencyList.filter(v => {
+        if (v.bName == "USDT") return true;
+      });
+
+      this.currencyList.forEach(v => {
+        if (v.bName == "USDT") {
+          this.currentCurrency = v;
+          this.currentCurrencySelling = v;
+        }
+      });
+      return this.currentCurrency;
+    },
+    //小数位数控制在两位
+    xiaoshu(x) {
+      var f = parseFloat(x);
+
+      var s = f.toString();
+      var rs = s.indexOf(".");
+      if (rs != -1) {
+        if (s.length > rs + 3) {
+          s = s.slice(0, rs + 3);
+        }
+      }
+
+      // while (s.length <= rs + 2) {
+      //     s += "0";
+      // }
+
+      return s;
+    },
+    getUserCurrencyDetails1(bid) {
+      this.$http
+        .post("/app/trading/getUserCurrencyDetails", qs.stringify({ bid: bid }))
+        .then(res => {
+          this.currentCurrency = res.data.data;
+
+          this.currentCurrencySelling = res.data.data;
+
+          this.getbitmallPrice(res.data.data.bName);
+        });
+    },
+    async getUserCurrencyDetails(bid) {
+      let res = await this.$http.post(
+        "/app/trading/getUserCurrencyDetails",
+        qs.stringify({ bid: bid })
+      );
+      this.currentCurrency = res.data.data;
+
+      this.currentCurrencySelling = res.data.data;
+
+      this.getbitmallPrice(res.data.data.bName);
+    },
+    // 选择币种
+    checkCurrency(bid) {
+      this.showBListBuy = false;
+
+      this.showBListSell = false;
+      this.buyNum = "";
+      this.sellNum = "";
+      this.buyAllPay = "";
+      this.sellAllPay = "";
+      this.getUserCurrencyDetails(bid);
+    },
+    //弹框是否确认购买
+    comformPay(side, pwd) {
+      Dialog.confirm({
+        message: "是否确认购买?"
+      })
+        .then(() => {
+          this.bitmallPay(side, pwd);
+        })
+        .catch(() => {
+          // on cancel
+        });
+    },
+    //买入/卖出
+    async bitmallPay(side, pwd) {
+      if (side == 1) {
+        var data = {
+          currency: this.currentCurrency.bName,
+          amount: this.buyAllPay,
+          side: 1,
+          userPrice: this.bitmall.buyPrice,
+          max: this.bitmall.max,
+          min: this.bitmall.min,
+          currencyNum: this.buyNum
+        };
+      } else {
+        data = {
+          currency: this.currentCurrencySelling.bName,
+          amount: this.sellAllPay,
+          side: 2,
+          userPrice: this.bitmall.sellPrice,
+          max: this.bitmall.max,
+          min: this.bitmall.min,
+          currencyNum: this.sellNum,
+          password: pwd
+        };
+      }
+      let res = await this.$http.post(
+        "/app/meet/bitmallPay",
+        qs.stringify(data)
+      );
+
+      if (res.data.retcode == 0) {
+        side == 2 && (this.paysuccuss = true);
+
+        location.href = res.data.data.url;
+      } else {
+        Dialog.alert({
+          message: res.data.msg
+        }).then(() => {
+          // on close
+        });
+      }
+    }
+  }
+};
+</script>
+
+<style scope lang="less">
+* {
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  position: relative;
+  height: 7rem;
+  padding-top: 0.16rem;
+  background-color: #36374d;
+  .paysuccuss {
+    width: 1.4rem;
+    height: 0.9rem;
+    text-align: center;
+    line-height: 0.9rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 0.03rem;
+    color: #fff;
+  }
+}
+
+.tobuyColor {
+  > span {
+    color: red;
+  }
+}
+
+input::-webkit-input-placeholder {
+  color: #cccccc;
+  font-size: 0.14rem;
+  line-height: 0.14rem;
+}
+.defalut {
+  width: 2.7rem !important;
+  height: 1.4rem !important;
+  border-radius: 0.04rem;
+  margin: 0 auto;
+  > div:nth-of-type(1) {
+    font-size: 0.13rem;
+    height: 0.95rem;
+    // line-height: 0.95rem;
+    text-align: center;
+    padding: 0.29rem 0.2rem 0;
+    border-bottom: 1px solid #f7f7f7;
+    box-sizing: border-box;
+    > p {
+      line-height: 0.22rem;
+    }
+  }
+  > p:nth-of-type(1) {
+    line-height: 0.45rem;
+    height: 0.45rem;
+    text-align: center;
+  }
+}
+.pwdpay {
+  // position: fixed;
+  // height: 4rem;
+  // width: 100%;
+  // background-color: #fff;
+  // bottom: -4rem;
+
+  .payHeadTxt {
+    text-align: center;
+    line-height: 0.45rem;
+    font-size: 0.14rem;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0.3rem;
+    color: #222222;
+    > img {
+      width: 0.13rem;
+      height: 0.13rem;
+      position: absolute;
+      top: 0.19rem;
+      right: 0.2rem;
+    }
+  }
+  .forgetPwd {
+    width: 3rem;
+    margin: 0.08rem auto;
+    text-align: right;
+    color: blue;
+  }
+  > .van-password-input {
+    width: 3.05rem;
+    margin: 0 auto;
+    border-radius: 0.02rem;
+    border: 1px solid #fff;
+    box-sizing: border-box;
+    height: 0.4rem;
+  }
+  .van-number-keyboard {
+    position: absolute;
+  }
+}
+
+.toSellColor {
+  > span {
+    color: green;
+  }
+}
+
+html {
+  font-size: 26.66667vw;
+}
+.van-tabs {
+  width: 3.75rem;
+  margin: 0.16rem auto;
+}
+
+.van-tabs__nav {
+  padding-left: 0.9rem;
+  background-color: transparent !important;
+  .van-tab {
+    max-width: 1rem;
+    font-size: 0.16rem;
+    // &:nth-of-type(2) {
+    //   > span {
+    //     color: red;
+    //   }
+    // }
+    //  &:nth-of-type(3){
+    //    color:green;
+    //  }
+  }
+  .van-tabs__line {
+    // display: none;
+    width: 0.18rem !important;
+  }
+}
+.van-overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.van-tabs__content {
+  width: 3.75rem;
+  position: absolute;
+  left: 0;
+  form {
+    padding: 0.3rem 0.21rem 0;
+    background-color: #404359;
+    border-radius: 0.04rem;
+    box-shadow: 0px 0.03rem 0.07rem 0px rgba(34, 36, 61, 0.2);
+    width: 3.03rem;
+    height: 4.24rem;
+    margin: 0.27rem auto 1rem;
+    > .headinfo {
+      display: flex;
+      margin-top: 0;
+      height: 0.42rem;
+      > div {
+        flex: 1;
+        > .bname {
+          font-size: 0.16rem;
+          color: #fff;
+          position: absolute;
+          margin: 0 0.08rem;
+        }
+      }
+      .bizhong {
+        width: 0.22rem;
+        height: 0.22rem;
+      }
+      .dorpdown {
+        width: 0.07rem;
+        height: 0.05rem;
+        margin-left: 0.57rem;
+      }
+
+      .tuihuan {
+        font-size: 0.14rem;
+        color: #f14348;
+        text-align: right;
+      }
+      .selltuihuan {
+        color: #4fcc7a;
+      }
+    }
+    > div {
+      position: relative;
+      height: 0.95rem;
+      // &:nth-of-type(1) {
+        // margin-top: 0.3rem;
+      // }
+      &.subdiv {
+        height: 0.7rem;
+      }
+      > i {
+        position: absolute;
+        color: #fff;
+        top: 0.4rem;
+        right: 0.1rem;
+        font-size: 0.14rem;
+      }
+      > input {
+        height: 0.4rem;
+        width: 3.05rem;
+        padding-left: 0.1rem;
+        border-radius: 0.02rem;
+        border: 1px solid #545871;
+        outline: none;
+        // margin-top: 0.1rem;
+        position: absolute;
+        // top: 0.2rem;
+        color: #fff;
+        box-sizing: border-box;
+      }
+      // &:nth-of-type(2) {
+        // top: 1.2rem;
+      // }
+      .tobuy {
+        width: 3.06rem;
+
+        text-align: center;
+
+        background-color: #f14348;
+        color: #fff;
+        padding: 0;
+        font-size: 0.16rem;
+        border-radius: 0.04rem;
+        border: none;
+        line-height: 0.44rem;
+        height: 0.44rem;
+      }
+      .tosell {
+        width: 3.06rem;
+        text-align: center;
+        background-color: #4fcc7a;
+        color: #fff;
+        padding: 0;
+        font-size: 0.16rem;
+        border-radius: 0.04rem;
+        border: none;
+        line-height: 0.44rem;
+        height: 0.44rem;
+      }
+      > p {
+        color: #9da0af;
+        font-size: 0.12rem;
+        margin-bottom: 0.1rem;
+      }
+    }
+  }
+  .van-tab__pane {
+    p {
+      // position: absolute;
+      // top: 0.1rem;
+      display: flex;
+      justify-content: space-between;
+
+      > span {
+        font-size: 0.14rem;
+        display: inline-block;
+      }
+      > .buyNum {
+        margin-right: 0.5rem;
+        color: #fff;
+      }
+      > .const {
+        color: #9da0af;
+        font-size: 0.12rem;
+      }
+    }
+  }
+}
+
+.mask {
+  position: fixed;
+  top: 0;
+  background: rgba(0, 0, 0, 0.4);
+  height: 100%;
+  width: 100%;
+  z-index: 10000;
+  display: none;
+}
+.van-hairline--top-bottom::after {
+  border: none !important;
+}
+// .showpaybox {
+//   animation: showpaybox 0.5s 1 forwards;
+// }
+// @keyframes showpaybox {
+//   from {
+//   }
+//   to {
+//     bottom: 0;
+//   }
+// }
+
+// .hidepaybox {
+//   animation: hidepaybox 0.5s 1 forwards;
+// }
+
+// @keyframes hidepaybox {
+//   from {
+//   }
+//   to {
+//     bottom: -4rem;
+//   }
+// }
+
+footer {
+  width: 100%;
+  top: 5.68rem;
+  position: absolute;
+  font-size: 0.12rem;
+  color: #9da0af;
+  text-align: center;
+  p:nth-of-type(1) {
+    margin-bottom: 0.09rem;
+    text-align: left;
+    padding-left: 1.6rem;
+    span {
+      position: absolute;
+      top: 0.02rem;
+    }
+  }
+  img {
+    width: 0.14rem;
+    height: 0.14rem;
+    margin-right: 0.08rem;
+  }
+}
+.blist {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+}
+
+.van-popup--center {
+  ul {
+    display: flex;
+    width: 100%;
+    // height: 100%;
+    flex-wrap: wrap;
+  }
+  li {
+    width: 25%;
+    height: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  img {
+    width: 0.35rem; 
+    margin-bottom: 0.11rem;
+    margin-top: 0.19rem;
+  }
+  span {
+    font-size: 0.12rem;
+    color: #222;
+  }
+}
+</style>

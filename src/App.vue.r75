@@ -719,37 +719,9 @@
           background: #F0F0F0;
         }
       }
-<<<<<<< .mine
-      .tosell {
-        width: 3.06rem;
-        text-align: center;
-        background-color: #4fcc7a;
-        color: #fff;
-        padding: 0;
-        font-size: 0.16rem;
-        border-radius: 0.04rem;
-        border: none;
-        line-height: 0.44rem;
-        height: 0.44rem;
-||||||| .r59
-      .tosell {
-        width: 3.06rem;
-
-        text-align: center;
-
-        background-color: #4fcc7a;
-        color: #fff;
-        padding: 0;
-        font-size: 0.16rem;
-        border-radius: 0.04rem;
-        border: none;
-        line-height: 0.44rem;
-        height: 0.44rem;
-=======
       .gray-key {
         background: #E4E4E5;
         font-size: 0.18rem;
->>>>>>> .r75
       }
     }
     // .forgetPwd {
@@ -947,18 +919,6 @@
   .blist {
     border-radius: 0.04rem;
   }
-<<<<<<< .mine
-  img {
-    width: 0.35rem; 
-    margin-bottom: 0.11rem;
-    margin-top: 0.19rem;
-||||||| .r59
-  img {
-    width: 0.35rem;
-    // height: 0.35rem;
-    margin-bottom: 0.11rem;
-    margin-top: 0.19rem;
-=======
   .van-popup--center {
     ul {
       display: flex;
@@ -982,7 +942,6 @@
       font-size: 0.12rem;
       color: #222;
     }
->>>>>>> .r75
   }
   .order-list {
     .order-item {
